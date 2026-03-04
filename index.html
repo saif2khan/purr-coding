@@ -322,6 +322,7 @@
       const waitlistForm = document.getElementById("waitlist-form");
       const emailInput = document.getElementById("email");
       const statusEl = document.getElementById("form-status");
+      const submitButton = waitlistForm.querySelector("button[type='submit']");
 
       waitlistForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -333,19 +334,34 @@
           return;
         }
 
-        try {
-          // Placeholder: Replace with Resend API call when you provide credentials.
-          // Example flow:
-          // 1) POST email to your backend endpoint.
-          // 2) Backend uses Resend to send a welcome email.
-          await new Promise((resolve) => setTimeout(resolve, 500));
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        submitButton.disabled = true;
+        submitButton.textContent = "Joining...";
 
-          statusEl.textContent = "You are on the waitlist. Welcome to Purr Coding!";
+        try {
+          const response = await fetch("/.netlify/functions/waitlist", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+          });
+
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.message || "Unable to join waitlist right now.");
+          }
+
+          statusEl.textContent = payload.message || "You are on the waitlist. Welcome to Purr Coding!";
           statusEl.className = "status success";
           waitlistForm.reset();
         } catch (error) {
-          statusEl.textContent = "Something went wrong. Please try again.";
+          statusEl.textContent = error.message || "Something went wrong. Please try again.";
           statusEl.className = "status error";
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "Reserve My Spot";
         }
       });
     </script>
